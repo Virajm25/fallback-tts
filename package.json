@@ -1,11 +1,12 @@
 {
-  "name": "src",
+  "name": "fallback-tts-service",
   "version": "1.0.0",
-  "description": "",
+  "description": "Fallback TTS microservice using Gemini for the AI voice agent platform",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
@@ -13,15 +14,11 @@
   "type": "commonjs",
   "dependencies": {
     "@google/genai": "^1.42.0",
-    "@google/generative-ai": "^0.24.1",
-    "axios": "^1.13.5",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
-    "uuid": "^13.0.0",
-    "winston": "^3.19.0",
-    "zod": "^4.3.6"
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.13"

@@ -4,7 +4,7 @@ const SUPPORTED_LANGUAGES = [
   "kok-IN", "mai-IN", "ur-IN"
 ];
 
-const SUPPORTED_FORMATS = ["mp3", "wav", "ogg"];
+const SUPPORTED_FORMATS = ["wav"];
 
 exports.validateTTSInput = ({ text, language, voice, format }) => {
   if (!text || typeof text !== "string") {
@@ -20,17 +20,16 @@ exports.validateTTSInput = ({ text, language, voice, format }) => {
     return "Text exceeds the maximum limit of 5000 characters.";
   }
 
-
   if (!language) {
     return "Language code is required.";
   }
 
   if (!SUPPORTED_LANGUAGES.includes(language)) {
-    return `Unsupported language: ${language}.`;
+    return `Unsupported language: "${language}". Supported: ${SUPPORTED_LANGUAGES.join(", ")}`;
   }
 
   if (format && !SUPPORTED_FORMATS.includes(format)) {
-    return `Unsupported audio format: ${format}. Supported formats: ${SUPPORTED_FORMATS.join(", ")}`;
+    return `Unsupported audio format: "${format}". Supported formats: ${SUPPORTED_FORMATS.join(", ")}`;
   }
 
   if (voice && typeof voice !== "string") {

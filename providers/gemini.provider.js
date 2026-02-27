@@ -1,13 +1,12 @@
 const { GoogleGenAI } = require("@google/genai");
-const fs = require("fs");
-const path = require("path");
 const logger = require("../config/logger");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-function buildWavBuffer(pcmBuffer) {
+function buildWavBuffer(pcmBuffer, mimeType = "") {
   const numChannels = 1;
-  const sampleRate = 24000;
+  const rateMatch = mimeType.match(/rate=(\d+)/);
+  const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
   const bitsPerSample = 16;
   const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
   const blockAlign = (numChannels * bitsPerSample) / 8;
@@ -21,14 +20,13 @@ function buildWavBuffer(pcmBuffer) {
   wavBuffer.write("WAVE", 8);
 
   wavBuffer.write("fmt ", 12);
-  wavBuffer.writeUInt32LE(16, 16);          
-  wavBuffer.writeUInt16LE(1, 20);            
+  wavBuffer.writeUInt32LE(16, 16);
+  wavBuffer.writeUInt16LE(1, 20);
   wavBuffer.writeUInt16LE(numChannels, 22);
   wavBuffer.writeUInt32LE(sampleRate, 24);
   wavBuffer.writeUInt32LE(byteRate, 28);
   wavBuffer.writeUInt16LE(blockAlign, 32);
   wavBuffer.writeUInt16LE(bitsPerSample, 34);
-
 
   wavBuffer.write("data", 36);
   wavBuffer.writeUInt32LE(dataSize, 40);
@@ -39,14 +37,9 @@ function buildWavBuffer(pcmBuffer) {
 
 exports.synthesize = async (text, language, options = {}) => {
   try {
-    const {
-      voice = "Aoede",   
-      style = "",        
-    } = options;
+    const { voice = "Aoede", style = "" } = options;
 
-    const prompt = style
-      ? `${style}\n${text}`
-      : text;
+    const prompt = style ? `${style}\n${text}` : text;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -61,14 +54,16 @@ exports.synthesize = async (text, language, options = {}) => {
       },
     });
 
-    const inlineData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+    const part = response.candidates?.[0]?.content?.parts?.[0];
+    const inlineData = part?.inlineData;
 
     if (!inlineData?.data) {
-      throw new Error("Gemini TTS returned no audio.");
+      throw new Error("Gemini TTS returned no audio data.");
     }
 
     const pcmBuffer = Buffer.from(inlineData.data, "base64");
-    const wavBuffer = buildWavBuffer(pcmBuffer);
+    const responseMimeType = inlineData.mimeType || "";
+    const wavBuffer = buildWavBuffer(pcmBuffer, responseMimeType);
     const audioBase64 = wavBuffer.toString("base64");
 
     logger.info("Gemini TTS succeeded", {
@@ -76,11 +71,12 @@ exports.synthesize = async (text, language, options = {}) => {
       voice,
       text_length: text.length,
       mimeType: "audio/wav",
+      sourceMimeType: responseMimeType,
     });
 
     return {
       provider: "gemini",
-      audioBase64,          
+      audioBase64,
       mimeType: "audio/wav",
     };
 
